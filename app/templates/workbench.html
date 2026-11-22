@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>快递面单对版台</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='layout.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='grid.css') }}">
+  <script type="module" src="{{ url_for('static', filename='main.js') }}"></script>
+</head>
+<body>
+  {% set stages = [('intake','面单收件'),('templates','模板生效'),('coordinates','坐标归一'),('barcode','条码字段对读'),('occlusion','边界遮挡'),('reconcile','出单勾稽'),('tickets','重打工单')] %}
+  <a class="skip" href="#main">跳到工作区</a>
+  <div class="shell">
+    <aside class="rail">
+      <a class="brand" href="#coordinates"><span class="mark" aria-hidden="true"></span><strong>面单对版台</strong></a>
+      <nav aria-label="业务导航">
+        {% for key,name in stages %}<a href="#{{ key }}" data-stage="{{ key }}">{{ name }}</a>{% endfor %}
+      </nav>
+      <div class="rail-meta"><span class="led"></span><span id="run-tag">读取批次</span></div>
+    </aside>
+    <div class="work">
+      <header class="topbar"><span>仓库打印 / <strong id="crumb">坐标归一</strong></span><div class="actions"><button class="btn" id="rerun" disabled>重跑批次</button><a class="btn primary" id="export" aria-disabled="true">下载证据</a></div></header>
+      <main id="main" class="content" tabindex="-1">
+        <div class="heading"><h1 id="title">坐标归一</h1><span id="version-chip" class="mono">—</span></div>
+        <div class="notice" id="notice" role="status" aria-live="polite" hidden><span id="message"></span><button type="button" class="text-btn" id="reload" hidden>加载当前批次</button></div>
+        <div id="kpis" class="kpis" aria-label="阶段指标"></div>
+        {% include 'intake.html' %}
+        {% include 'templates.html' %}
+        {% include 'coordinates.html' %}
+        {% include 'barcode.html' %}
+        {% include 'occlusion.html' %}
+        {% include 'reconcile.html' %}
+        <div class="stage ticket-stage" id="stage-tickets" hidden>
+          <section class="panel"><div class="panel-head"><h2>面单链</h2><label>显示 <select id="ticket-filter"><option value="links">重打与作废</option><option value="all">全部面单</option><option value="isolated">隔离面单</option></select></label></div><div id="tickets-table" class="scroll"></div></section>
+          <section class="panel"><div class="panel-head"><h2>登记作废与重打</h2><label>工单动作 <select id="ticket-action"><option value="reprint">重打</option><option value="void">作废</option></select></label></div>
+            <form id="ticket-form" class="form-deck">
+              <label><span>目标面单</span><select id="ticket-target" name="target" required></select></label>
+              <label id="ticket-new-field"><span>新面单号</span><input id="ticket-new" name="label" maxlength="48" pattern="[A-Za-z0-9_\-]+"></label>
+              <label id="ticket-reason-field" hidden><span>作废原因</span><select id="ticket-reason">{% for key,value in void_reasons.items() %}<option value="{{ key }}">{{ value }}</option>{% endfor %}</select></label>
+              <label><span>发生时点</span><input id="ticket-time" type="datetime-local" step="1" required></label>
+              <button class="btn primary" type="submit" id="ticket-submit">提交重打</button>
+            </form>
+          </section>
+          <section class="panel"><div class="panel-head"><h2>作废登记核验</h2><label>显示 <select id="void-filter"><option value="applied">已作废</option><option value="excluded">隔离登记</option></select></label></div><div id="void-table" class="scroll"></div></section>
+          <section class="panel"><div class="panel-head"><h2>批次留档</h2><button id="restore" class="btn" hidden>切回此批次</button></div><div id="history" class="scroll"></div></section>
+        </div>
+      </main>
+      <footer class="statusbar"><span><i class="led"></i> <span id="state">正在读取</span></span><span id="stamp">Asia/Shanghai</span></footer>
+    </div>
+  </div>
+  <script id="labels" type="application/json">{{ labels|tojson }}</script>
+  <script id="void-labels" type="application/json">{{ void_reasons|tojson }}</script>
+</body>
+</html>
